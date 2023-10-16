@@ -1,3 +1,4 @@
+import numpy as np
 import jax.numpy as jnp
 
 from tensorflow.keras.datasets import mnist
@@ -21,13 +22,21 @@ def get_mnist_dataset(labels):
     test_x = test_x[jnp.where(test_idx)]
     test_y = test_y[jnp.where(test_idx)]
 
+    # ラベルの値を変える
+    # e.g. labels=[6,7]のとき，6を0,7を1に変える
+    # こうしないと，to_categorical()が使えない
+    for i, label in enumerate(labels):
+        np.place(train_y, (train_y==label)>0, i)
+        np.place(test_y, (test_y==label)>0, i)
+ 
     # 画像のピクセル値を，0以上1以下に正規化
     train_x = train_x.astype('float32') / 255
     test_x = test_x.astype('float32') / 255
 
     # 望ましい値を，one-hotベクトルにする
-    train_y = to_categorical(train_y, 10) # ２番目の引数で，次元数を指定する
-    test_y = to_categorical(test_y, 10)
+    N = len(labels)
+    train_y = to_categorical(train_y, N) # ２番目の引数で，次元数を指定する
+    test_y = to_categorical(test_y, N)
 
     # numpyの配列を，jax.numpyの配列に型変換する
     train_x = jnp.array(train_x)
